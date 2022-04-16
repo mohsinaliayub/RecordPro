@@ -17,8 +17,10 @@ class RecordProController: UIViewController {
     @IBOutlet private var recordButton: UIButton!
     @IBOutlet private var timeLabel: UILabel!
     
-    var audioRecorder: AVAudioRecorder!
-    var audioPlayer: AVAudioPlayer?
+    private var audioRecorder: AVAudioRecorder!
+    private var audioPlayer: AVAudioPlayer?
+    private var timer: Timer?
+    private var elapsedTimeInSeconds = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -68,6 +70,31 @@ class RecordProController: UIViewController {
         }
     }
     
+    // MARK: - Timer
+    
+    func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { _ in
+            self.elapsedTimeInSeconds += 1
+            self.updateTimeLabel()
+        })
+    }
+    
+    func pauseTimer() {
+        timer?.invalidate()
+    }
+    
+    func resetTimer() {
+        timer?.invalidate()
+        elapsedTimeInSeconds = 0
+        updateTimeLabel()
+    }
+    
+    func updateTimeLabel() {
+        let seconds = elapsedTimeInSeconds % 60
+        let minutes = (elapsedTimeInSeconds / 60) % 60
+        
+        timeLabel.text = String(format: "%02d:%02d", minutes, seconds)
+    }
 
     // MARK: - Action methods
     
@@ -79,6 +106,7 @@ class RecordProController: UIViewController {
         
         // Stop the audio recorder
         audioRecorder?.stop()
+        resetTimer()
         
         let audioSession = AVAudioSession.sharedInstance()
         
@@ -100,6 +128,7 @@ class RecordProController: UIViewController {
         audioPlayer = player
         audioPlayer?.delegate = self
         audioPlayer?.play()
+        startTimer()
     }
 
     @IBAction func record(sender: UIButton) {
@@ -116,6 +145,7 @@ class RecordProController: UIViewController {
                 
                 // Start recording
                 audioRecorder.record()
+                startTimer()
                 
                 // change the pause image
                 recordButton.setImage(UIImage(named: "Pause"), for: .normal)
@@ -125,6 +155,7 @@ class RecordProController: UIViewController {
         } else {
             // Pause recording
             audioRecorder.pause()
+            pauseTimer()
             
             // Change to the Record image
             recordButton.setImage(UIImage(named: "Record"), for: .normal)
@@ -150,6 +181,7 @@ extension RecordProController: AVAudioRecorderDelegate {
 extension RecordProController: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         playButton.isSelected = false
+        resetTimer()
         
         let alertController = UIAlertController(title: "Finish Playing", message: "Finish playing the recording!", preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
