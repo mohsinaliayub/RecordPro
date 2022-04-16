@@ -90,7 +90,16 @@ class RecordProController: UIViewController {
     }
 
     @IBAction func play(sender: UIButton) {
+        if audioRecorder.isRecording { return }
         
+        guard let player = try? AVAudioPlayer(contentsOf: audioRecorder.url) else {
+            print("Failed to initialize AVAudioPlayer")
+            return
+        }
+        
+        audioPlayer = player
+        audioPlayer?.delegate = self
+        audioPlayer?.play()
     }
 
     @IBAction func record(sender: UIButton) {
@@ -128,5 +137,22 @@ class RecordProController: UIViewController {
 }
 
 extension RecordProController: AVAudioRecorderDelegate {
-    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        if !flag { return }
+        
+        let alertController = UIAlertController(title: "Finish Recording", message: "Successfully recorded the audio!", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        present(alertController, animated: true)
+    }
+}
+
+extension RecordProController: AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        playButton.isSelected = false
+        
+        let alertController = UIAlertController(title: "Finish Playing", message: "Finish playing the recording!", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alertController, animated: true)
+    }
 }
